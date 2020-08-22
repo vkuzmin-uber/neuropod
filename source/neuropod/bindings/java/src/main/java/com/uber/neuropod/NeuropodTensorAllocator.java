@@ -70,60 +70,68 @@ public class NeuropodTensorAllocator extends NativeClass {
      * Create a NeuropodTensor based on given LongBuffer, dims array. The created tensor
      * will have tensor type INT64_TENSOR.
      * <p>
-     * Will not trigger a copy if the buffer is a direct buffer in native order and the backend of
-     * the allocator does not have alignment requirement. Otherwise it will trigger a copy.
+     * Will trigger a copy.
      *
      * @param longBuffer the buffer that contains tensor data
      * @param dims       the shape of the tensor
      * @return the created NeuropodTensor
      */
-    NeuropodTensor create(LongBuffer longBuffer, long[] dims) {
-        return null;
+    public NeuropodTensor copyFrom(LongBuffer longBuffer, long[] dims) {
+        TensorType type =TensorType.INT64_TENSOR;
+        ByteBuffer tensorBuffer = allocateJavaBuffer(dims, type);
+        tensorBuffer.asLongBuffer().put(longBuffer);
+        return createTensorFromBuffer(tensorBuffer, dims, type);
     }
 
     /**
      * Create a NeuropodTensor based on given IntBuffer, dims array. The created tensor
      * will have type INT32_TENSOR.
      * <p>
-     * Will not trigger a copy if the buffer is a direct buffer in native order and the backend of
-     * the allocator does not have alignment requirement. Otherwise it will trigger a copy.
+     * Will trigger a copy.
      *
      * @param intBuffer the buffer that contains tensor data
      * @param dims      the shape of the tensor
      * @return the created NeuropodTensor
      */
-    NeuropodTensor create(IntBuffer intBuffer, long[] dims) {
-        return null;
+    public NeuropodTensor copyFrom(IntBuffer intBuffer, long[] dims) {
+        TensorType type =TensorType.INT32_TENSOR;
+        ByteBuffer tensorBuffer = allocateJavaBuffer(dims, type);
+        tensorBuffer.asIntBuffer().put(intBuffer);
+        return createTensorFromBuffer(tensorBuffer, dims, type);
     }
 
     /**
      * Create a NeuropodTensor based on given DoubleBuffer, dims array. The created tensor
      * will have type DOUBLE_TENSOR.
      * <p>
-     * Will not trigger a copy if the buffer is a direct buffer in native order and the backend of
-     * the allocator does not have alignment requirement. Otherwise it will trigger a copy.
+     * Will trigger a copy.
      *
      * @param doubleBuffer the buffer that contains tensor data
      * @param dims         the shape of the tensor
      * @return the created NeuropodTensor
      */
-    NeuropodTensor create(DoubleBuffer doubleBuffer, long[] dims) {
-        return null;
+    public NeuropodTensor copyFrom(DoubleBuffer doubleBuffer, long[] dims) {
+        TensorType type =TensorType.DOUBLE_TENSOR;
+        ByteBuffer tensorBuffer = allocateJavaBuffer(dims, type);
+        tensorBuffer.asDoubleBuffer().put(doubleBuffer);
+        return createTensorFromBuffer(tensorBuffer, dims, type);
     }
 
     /**
      * Create a NeuropodTensor based on given FloatBuffer, dims array. The created tensor
      * will have type FLOAT_TENSOR.
      * <p>
-     * Will not trigger a copy if the buffer is a direct buffer in native order and the backend of
-     * the allocator does not have alignment requirement. Otherwise it will trigger a copy.
+     * Will trigger a copy.
      *
      * @param floatBuffer the buffer that contains tensor data
      * @param dims        the shape of the tensor
      * @return the neuropod NeuropodTensor
      */
-    NeuropodTensor create(FloatBuffer floatBuffer, long[] dims) {
-        return null;
+    public NeuropodTensor copyFrom(FloatBuffer floatBuffer, long[] dims) {
+        TensorType type =TensorType.FLOAT_TENSOR;
+        ByteBuffer tensorBuffer = allocateJavaBuffer(dims, type);
+        tensorBuffer.asFloatBuffer().put(floatBuffer);
+        return createTensorFromBuffer(tensorBuffer, dims, type);
     }
 
     /**
@@ -136,8 +144,17 @@ public class NeuropodTensorAllocator extends NativeClass {
      * @param dims       the dims
      * @return the created NeuropodTensor
      */
-    NeuropodTensor create(List<String> stringList, long[] dims) {
-        return null;
+    public NeuropodTensor copyFrom(List<String> stringList, long[] dims) {
+        NeuropodTensor tensor = new NeuropodTensor();
+        tensor.setNativeHandle(nativeCreateStringTensor(stringList, dims, super.getNativeHandle()));
+        return tensor;
+    }
+
+    private static ByteBuffer allocateJavaBuffer(long[] dims, TensorType tensorType) {
+        ByteBuffer buffer = ByteBuffer.allocateDirect(
+                (int)(tensorType.getBytesPerElement() *
+                        Arrays.stream(dims).reduce(1, (ele1, ele2) -> ele1*ele2)));
+        return buffer.order(ByteOrder.nativeOrder());
     }
 
     private NeuropodTensor createTensorFromBuffer(ByteBuffer buffer, long[] dims, TensorType tensorType) {
@@ -151,6 +168,10 @@ public class NeuropodTensorAllocator extends NativeClass {
                                               int tensorType,
                                               ByteBuffer buffer,
                                               long allocatorHandle) throws NeuropodJNIException;
+
+    private static native long nativeCreateStringTensor(List<String> data,
+                                                        long[] dims,
+                                                        long allocatorHandle) throws NeuropodJNIException;
 
     @Override
     protected native void nativeDelete(long handle) throws NeuropodJNIException;

@@ -82,5 +82,14 @@ void throwJavaException(JNIEnv *env, const char *message)
     env->ThrowNew(com_uber_neuropod_NeuropodJNIException, message);
 }
 
+std::vector<int64_t> jlongArrayToVector(JNIEnv *env, jlongArray origin)
+{
+    jsize                shapeSize = env->GetArrayLength(origin);
+    jlong *              arr       = env->GetLongArrayElements(origin, 0);
+    std::vector<int64_t> shapes(arr, arr + shapeSize);
+    env->ReleaseLongArrayElements(origin, arr, JNI_ABORT);
+    return shapes;
+}
+
 } // namespace jni
 } // namespace neuropod

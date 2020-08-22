@@ -21,14 +21,58 @@ namespace jni
 template <typename T>
 jobject createDirectBuffer(JNIEnv *env, NeuropodTensor *tensor)
 {
-    auto         typedTensor = tensor->as_typed_tensor<T>();
+    auto typedTensor = tensor->as_typed_tensor<T>();
     if (typedTensor == nullptr)
     {
         throw std::runtime_error("the tensor does not match its type");
     }
-    auto         rawPtr      = typedTensor->get_raw_data_ptr();
-    const size_t memSize     = sizeof(T) * tensor->get_num_elements();
+    auto         rawPtr  = typedTensor->get_raw_data_ptr();
+    const size_t memSize = sizeof(T) * tensor->get_num_elements();
     return env->NewDirectByteBuffer(rawPtr, static_cast<jlong>(memSize));
+}
+
+template <size_t N>
+void mapStringTensor(neuropod::TensorAccessor<neuropod::TypedNeuropodTensor<std::string> &, N> accessor,
+                     const std::function<void(string_accessor_type *)> &                       func,
+                     const std::vector<int64_t>                                                dims)
+{
+    for (int i = 0; i < dims[N - 1]; i++)
+    {
+        {
+            mapStringTensor(accessor[i], func, dims);
+        }
+    }
+}
+
+template <>
+inline void mapStringTensor(neuropod::TensorAccessor<neuropod::TypedNeuropodTensor<std::string> &, 1> accessor,
+                            const std::function<void(string_accessor_type *)> &                       func,
+                            const std::vector<int64_t>                                                dims)
+{
+    for (int i = 0; i < dims[0]; i++)
+    {
+        {
+            auto elementAcc = accessor[i];
+            func(&elementAcc);
+        }
+    }
+}
+
+template <size_t N>
+void atStringTensor(neuropod::TensorAccessor<neuropod::TypedNeuropodTensor<std::string> &, N> accessor,
+                    const std::function<void(string_accessor_type *)> &                       func,
+                    const std::vector<int64_t>                                                targetDim)
+{
+    atStringTensor(accessor[targetDim[N - 1]], func, targetDim);
+}
+
+template <>
+inline void atStringTensor(neuropod::TensorAccessor<neuropod::TypedNeuropodTensor<std::string> &, 1> accessor,
+                           const std::function<void(string_accessor_type *)> &                       func,
+                           const std::vector<int64_t>                                                targetDim)
+{
+    auto elementAcc = accessor[targetDim[0]];
+    func(&elementAcc);
 }
 
 } // namespace jni
