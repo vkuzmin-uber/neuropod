@@ -2,6 +2,9 @@
 
 ***NOTE: This API is currently experimental***
 
+Use google-java-format to format Java source files.
+It will be used by tools/lint.sh and tools/autofix.sh later.
+
 ## Usage
 
 ```java
